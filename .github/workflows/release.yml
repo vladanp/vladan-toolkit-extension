@@ -16,7 +16,7 @@ on:
         required: true
         default: main
       dry_run:
-        description: Dry run: only check Chrome Web Store credentials, upload nothing
+        description: "Dry run: only check Chrome Web Store credentials, upload nothing"
         type: boolean
         default: true
 
