@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { expect, expectRuleset, servePage, setFeature, test } from './fixtures';
 
 test.beforeEach(async ({ context }) => {
@@ -33,28 +36,31 @@ test('opens the normal page for AMP links and AMP pages', async ({ page, service
   expect(page.url()).toBe('https://news.example.com/other');
 });
 
-test('stays on the AMP page when the site sends the browser back to it', async ({
-  context,
-  page,
-}) => {
+test('stays on the AMP page when the site sends the browser back to it', async ({ page }) => {
+  // A real local server: Playwright sometimes misses the request a routed redirect leads to.
+  const ampPage = await readFile(servePage('amp-page.html').path);
   let normalPageVisits = 0;
-  // Like a site redirecting phones to its AMP pages.
-  await context.route('https://loop.example.com/story', (route) => {
-    normalPageVisits++;
-    return route.fulfill({
-      status: 302,
-      headers: { location: 'https://loop.example.com/story/amp' },
-    });
+  const server = createServer((request, response) => {
+    if (request.url === '/story') {
+      // Like a site redirecting phones to its AMP pages.
+      normalPageVisits++;
+      response.writeHead(302, { location: '/story/amp' }).end();
+    } else {
+      response.writeHead(200, { 'content-type': 'text/html' }).end(ampPage);
+    }
   });
-  await context.route('https://loop.example.com/story/amp', (route) =>
-    route.fulfill(servePage('amp-page.html')),
-  );
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const ampUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}/story/amp`;
 
-  await page.goto('https://loop.example.com/story/amp');
-  await expect.poll(() => normalPageVisits).toBe(1);
-  await page.waitForTimeout(1000); // A loop would keep going.
-  expect(normalPageVisits).toBe(1);
-  expect(page.url()).toBe('https://loop.example.com/story/amp');
+  try {
+    await page.goto(ampUrl);
+    await expect.poll(() => normalPageVisits).toBe(1);
+    await page.waitForTimeout(1000); // A loop would keep going.
+    expect(normalPageVisits).toBe(1);
+    expect(page.url()).toBe(ampUrl);
+  } finally {
+    server.close();
+  }
 });
 
 test('switched off, leaves AMP links and pages alone', async ({
