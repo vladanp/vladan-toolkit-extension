@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.0](https://github.com/vladanp/vladan-toolkit-extension/compare/v0.2.0...v0.3.0) (2026-10-20)
+
+
+### Features
+
+* default YouTube video quality, picked next to its switch ([b9cb250](https://github.com/vladanp/vladan-toolkit-extension/commit/b9cb2501a4e2458972ebc2be455eb97a07fdcc01))
+* hide promoted and suggested posts on LinkedIn ([b9cb250](https://github.com/vladanp/vladan-toolkit-extension/commit/b9cb2501a4e2458972ebc2be455eb97a07fdcc01))
+* modern look for the popup and settings page ([370e349](https://github.com/vladanp/vladan-toolkit-extension/commit/370e3492ef4c314c4bb90bfdbfc45e267ff57af2))
+* open original pages instead of AMP ([b9cb250](https://github.com/vladanp/vladan-toolkit-extension/commit/b9cb2501a4e2458972ebc2be455eb97a07fdcc01))
+* remove the "Always use old Reddit" feature ([d978422](https://github.com/vladanp/vladan-toolkit-extension/commit/d978422d53b4c0e4d13a14d442f4806bbd3af6b5))
+* show YouTube dislike counts (Return YouTube Dislike) ([b9cb250](https://github.com/vladanp/vladan-toolkit-extension/commit/b9cb2501a4e2458972ebc2be455eb97a07fdcc01))
+
+
+### Bug Fixes
+
+* **deps:** update dependencies ([#4](https://github.com/vladanp/vladan-toolkit-extension/issues/4)) ([7639cd1](https://github.com/vladanp/vladan-toolkit-extension/commit/7639cd1dd86282ad44ebdd5762bbb5217c4eb3ca))
+* no dashes in the UI, comments and docs ([182d87b](https://github.com/vladanp/vladan-toolkit-extension/commit/182d87b3e209b2d59eb1898af227637f8402ed44))
+
 ## [0.2.0](https://github.com/vladanp/vladan-toolkit/compare/v0.1.0...v0.2.0) (2026-10-08)
 
 

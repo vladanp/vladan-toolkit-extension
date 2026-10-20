@@ -2,7 +2,7 @@
   "name": "vladan-toolkit",
   "description": "A personal Chrome toolkit that grows one feature at a time.",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "packageManager": "pnpm@12.14.0",
   "engines": {
