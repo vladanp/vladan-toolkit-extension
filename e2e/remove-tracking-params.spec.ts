@@ -2,14 +2,15 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { expect, expectRuleset, setFeature, test } from './fixtures';
 
-// A real local web server (network rules act on real requests), logging every path it is asked for.
+// A real local web server (network rules act on real requests), logging every page it is asked for.
 let server: Server;
 let origin: string;
 const requested: string[] = [];
 
 test.beforeAll(async () => {
   server = createServer((request, response) => {
-    requested.push(request.url ?? '');
+    // Not the icon: Chrome asks for it on its own, at any moment.
+    if (request.url !== '/favicon.ico') requested.push(request.url ?? '');
     response.setHeader('content-type', 'text/html');
     response.end('<a id="next" href="/next?page=2&utm_campaign=newsletter">next</a>');
   });
