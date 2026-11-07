@@ -3,10 +3,10 @@
  * "watched" progress bar. Current layout (lockup view models) and the legacy renderer.
  */
 ytd-browse[page-subtype="subscriptions"]
-:is(ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer):has(
-  .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment,
-  ytd-thumbnail-overlay-resume-playback-renderer
-) {
+  :is(ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer):has(
+    .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment,
+    ytd-thumbnail-overlay-resume-playback-renderer
+  ) {
   /* biome-ignore lint/complexity/noImportantStyles: must win over YouTube's own (often inline) styles */
   display: none !important;
 }

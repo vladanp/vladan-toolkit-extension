@@ -26,7 +26,7 @@ export function mainWorldSwitch(featureId: string, doc: Document = document, tim
   });
   doc.dispatchEvent(new CustomEvent(askEvent, { detail: featureId }));
 
-  return (): Promise<boolean> => {
+  const isOn = (): Promise<boolean> => {
     if (on !== undefined) return Promise.resolve(on);
     return new Promise((resolve) => {
       waiting.add(resolve);
@@ -36,4 +36,7 @@ export function mainWorldSwitch(featureId: string, doc: Document = document, tim
       }, timeout);
     });
   };
+  /** The answer right now, for code that can't wait (e.g. inside a beforeunload event): "off" until known. */
+  isOn.now = () => on ?? false;
+  return isOn;
 }

@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type Feature, featureEnabled, whileEnabled } from './features';
+import {
+  type Feature,
+  featureEnabled,
+  followFeature,
+  pausedSites,
+  tabHost,
+  whileEnabled,
+} from './features';
 
 const feature: Feature = {
   id: 'test-feature',
@@ -58,5 +65,42 @@ describe('whileEnabled', () => {
     await featureEnabled(feature).setValue(true);
     await settle();
     expect(enable).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('paused sites', () => {
+  it('turn the feature off on that site, live, and back on when resumed', async () => {
+    const seen: boolean[] = [];
+    await followFeature(feature, (on) => seen.push(on), 'news.example.com');
+    expect(seen.at(-1)).toBe(true);
+
+    await pausedSites.setValue(['news.example.com']);
+    await settle();
+    expect(seen.at(-1)).toBe(false);
+
+    await featureEnabled(feature).setValue(true); // The switch alone doesn't override the pause.
+    await settle();
+    expect(seen.at(-1)).toBe(false);
+
+    await pausedSites.setValue([]);
+    await settle();
+    expect(seen.at(-1)).toBe(true);
+  });
+
+  it('leave other sites alone', async () => {
+    await pausedSites.setValue(['other.example.com', 'example.com']);
+    const seen: boolean[] = [];
+    await followFeature(feature, (on) => seen.push(on), 'news.example.com');
+    expect(seen).toEqual([true]);
+  });
+
+  it("count by the tab's page, also inside its iframes", () => {
+    const frame = {
+      hostname: 'consent.cmp.example',
+      ancestorOrigins: ['https://news.example.com'],
+    };
+    expect(tabHost(frame as unknown as Location)).toBe('news.example.com');
+    expect(tabHost({ hostname: 'news.example.com' } as Location)).toBe('news.example.com');
+    expect(tabHost(undefined)).toBe('');
   });
 });

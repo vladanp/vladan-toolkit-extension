@@ -1,4 +1,5 @@
 import { FeatureToggles } from '@/components/FeatureToggles';
+import { PauseSite } from '@/components/PauseSite';
 import { getVersionLabel } from '@/lib/version';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
           {getVersionLabel(browser.runtime.getManifest().version)}
         </span>
       </header>
+      <PauseSite />
       {/* Side padding keeps the cards' shadows and focus rings unclipped; `relative` keeps the
           screen reader only descriptions (absolutely positioned) inside the scroll area. */}
       <div className="relative -mx-3 min-h-0 overflow-y-auto px-3 pb-1 [scrollbar-width:thin]">

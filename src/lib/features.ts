@@ -32,12 +32,53 @@ export function featureChoice(feature: Feature) {
   });
 }
 
+/** Sites (host names) where the user paused every feature, from the popup. Synced like the switches. */
+export const pausedSites = storage.defineItem<string[]>('sync:pausedSites', { fallback: [] });
+
+/** The host name of the tab's page: the top frame's, also when running inside an iframe. */
+export function tabHost(loc: Location | undefined = globalThis.location): string {
+  const top = loc?.ancestorOrigins?.[loc.ancestorOrigins.length - 1];
+  return top ? new URL(top).hostname : (loc?.hostname ?? '');
+}
+
 /**
- * Runs `enable` while the feature is switched on, and the cleanup it returns when switched off,
- * reacting live to the switch. Returns a function that stops watching (and cleans up).
+ * Calls `apply` with whether the feature should act on this page (switched on, and the site not
+ * paused), now and on every change. Returns a function that stops watching.
+ */
+export async function followFeature(
+  feature: Feature,
+  apply: (on: boolean) => void,
+  host = tabHost(),
+) {
+  const setting = featureEnabled(feature);
+  let enabled: boolean | undefined;
+  let paused: boolean | undefined;
+  const update = () => {
+    if (enabled !== undefined && paused !== undefined) apply(enabled && !paused);
+  };
+  const unwatchSetting = setting.watch((value) => {
+    enabled = value;
+    update();
+  });
+  const unwatchPaused = pausedSites.watch((sites) => {
+    paused = sites.includes(host);
+    update();
+  });
+  const [on, sites] = await Promise.all([setting.getValue(), pausedSites.getValue()]);
+  enabled ??= on;
+  paused ??= sites.includes(host);
+  update();
+  return () => {
+    unwatchSetting();
+    unwatchPaused();
+  };
+}
+
+/**
+ * Runs `enable` while the feature is switched on (and its site not paused), and the cleanup it
+ * returns when that ends, reacting live. Returns a function that stops watching (and cleans up).
  */
 export async function whileEnabled(feature: Feature, enable: () => () => void) {
-  const setting = featureEnabled(feature);
   let disable: (() => void) | undefined;
   const apply = (on: boolean) => {
     if (on && !disable) disable = enable();
@@ -46,8 +87,7 @@ export async function whileEnabled(feature: Feature, enable: () => () => void) {
       disable = undefined;
     }
   };
-  const unwatch = setting.watch(apply);
-  apply(await setting.getValue());
+  const unwatch = await followFeature(feature, apply);
   return () => {
     unwatch();
     apply(false);
