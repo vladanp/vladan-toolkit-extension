@@ -89,7 +89,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           cache: pnpm
 
       # No lifecycle scripts: nothing but `wxt submit` runs project/dependency code in this job.

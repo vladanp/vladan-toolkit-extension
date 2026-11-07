@@ -1,0 +1,25 @@
+<!doctype html>
+<!--
+  Offline model of a page that asks "Leave site?" when closed: with a beforeunload listener, or with
+  `?property` the window.onbeforeunload handler. It has a text field to type in.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Leave prompts</title>
+  </head>
+  <body>
+    <h1>Article</h1>
+    <input id="note" aria-label="Note" />
+    <script>
+      if (location.search.includes('property')) {
+        window.onbeforeunload = () => 'Changes you made may not be saved.';
+      } else {
+        addEventListener('beforeunload', (event) => {
+          event.preventDefault();
+          event.returnValue = '';
+        });
+      }
+    </script>
+  </body>
+</html>

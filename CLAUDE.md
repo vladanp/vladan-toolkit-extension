@@ -5,23 +5,28 @@ A personal Chrome extension (Manifest V3) that grows one feature at a time.
 The repo is **public**: never commit secrets, tokens, `.env` files, or personal data.
 
 ## Stack
+
 - **WXT** (Vite based extension framework): manifest generated from `wxt.config.ts` + `src/entrypoints/`
 - **React 19** + **TypeScript 7** + **Tailwind CSS v4** (CSS first config, `@import "tailwindcss"`)
 - **Biome** (lint + format), **Vitest** (unit; WXT fake `browser`; optional `happy-dom`), **Playwright** (e2e in real Chromium)
 - **pnpm 12**, **lefthook** git hooks, **commitlint** (conventional commits), **release-please**
+- **Node 26**, pinned in `package.json` `devEngines.runtime` (pnpm downloads it for scripts; CI reads it too).
+  Dependency versions are pinned exactly (`saveExact` in `pnpm-workspace.yaml`): no `^` ranges.
 
 ## Commands
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Opens Chrome with the extension loaded + hot reload (persistent profile in `.chrome-dev-profile/`) |
-| `pnpm verify` | Everything: typecheck, Biome, unit tests, build, e2e. Must be green before pushing |
-| `pnpm check` | Typecheck (regenerates WXT types first) + Biome (CI mode) |
-| `pnpm lint:fix` | Autofix formatting/lint |
-| `pnpm test` / `pnpm test:watch` | Vitest unit tests (`src/**/*.test.ts(x)`, `scripts/**/*.test.ts`) |
-| `pnpm e2e` | Playwright e2e (`e2e/*.spec.ts`); global setup installs Chromium if missing and builds + zips first |
-| `pnpm build` / `pnpm zip` | Production build to `.output/chrome-mv3` / zip for the Web Store |
+
+| Command                         | What it does                                                                                        |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                      | Opens Chrome with the extension loaded + hot reload (persistent profile in `.chrome-dev-profile/`)  |
+| `pnpm verify`                   | Everything: typecheck, Biome, unit tests, build, e2e. Must be green before pushing                  |
+| `pnpm check`                    | Typecheck (regenerates WXT types first) + Biome (CI mode)                                           |
+| `pnpm lint:fix`                 | Autofix formatting/lint                                                                             |
+| `pnpm test` / `pnpm test:watch` | Vitest unit tests (`src/**/*.test.ts(x)`, `scripts/**/*.test.ts`)                                   |
+| `pnpm e2e`                      | Playwright e2e (`e2e/*.spec.ts`); global setup installs Chromium if missing and builds + zips first |
+| `pnpm build` / `pnpm zip`       | Production build to `.output/chrome-mv3` / zip for the Web Store                                    |
 
 ## Git hooks (automatic)
+
 - `pre-commit` (fast): Biome autofixes staged files, typecheck.
 - `commit-msg`: must be a conventional commit: `feat: ...`, `fix: ...`, `chore: ...`, `refactor: ...`, `docs: ...`, `test: ...`, `ci: ...`, `build: ...`.
   Only `feat`/`fix` (and breaking changes) trigger a release.
@@ -30,6 +35,7 @@ The repo is **public**: never commit secrets, tokens, `.env` files, or personal 
   Tag only pushes and deletions skip verify. Never bypass with `--no-verify`; fix the failure instead.
 
 ## Layout
+
 ```
 src/
   entrypoints/        # WXT entrypoints → each becomes part of the manifest
@@ -42,7 +48,7 @@ src/
     rulesets.ts       # network rule features (declarativeNetRequest), read by wxt.config.ts
     <feature-id>/     # one folder per feature: index.ts = definition only; logic, CSS, tests next to it
   components/         # shared React UI (FeatureToggles)
-  lib/features.ts     # Feature type + groups, featureEnabled(), featureChoice(), whileEnabled()
+  lib/features.ts     # Feature type + groups, featureEnabled(), featureChoice(), whileEnabled(), pausedSites
   lib/style.ts        # injectStyle(): switchable <style> for a page or a shadow root (in a cascade layer)
   lib/main-world.ts   # mainWorldSwitch(): a feature's switch inside the page's own JS world
   lib/page-switch.ts  # shareSwitchWithPage(): isolated world side of that
@@ -55,7 +61,9 @@ public/icon/          # extension icons
 ```
 
 ## Adding a feature (the recipe)
+
 1. **Define it** in `src/features/<feature-id>/index.ts`:
+
    ```ts
    export const myFeature = {
      id: 'my-feature',            // kebab case, never rename (it's the storage key)
@@ -65,11 +73,14 @@ public/icon/          # extension icons
      enabledByDefault: true,
    } satisfies Feature;
    ```
+
    Keep `index.ts` to the definition: the popup imports every one. Heavy logic goes in other files.
    A setting beyond on/off: add `choice: { label, options: { value: 'Label', … }, default }`; the popup shows a
    dropdown next to the switch, and `featureChoice(myFeature)` is its storage item (see `default-youtube-quality`).
 2. **Register it** in `src/features/registry.ts`. The popup and settings page then show its switch automatically.
-3. **Gate all behavior on the switch** (it must apply live, without reloading pages):
+3. **Gate all behavior on the switch** (it must apply live, without reloading pages). `whileEnabled` and
+   `shareSwitchWithPage` also turn the feature off on sites paused from the popup ("Pause on this site"), and the
+   background exempts paused sites from every network ruleset; code reading `featureEnabled` directly doesn't:
    - Content script: `src/entrypoints/<feature-id>.content.ts` with
      `const stop = await whileEnabled(myFeature, () => { start(); return undo; }); ctx.onInvalidated(stop);`
      For page CSS: `whileEnabled(myFeature, () => injectStyle(css, myFeature.id))`, importing the CSS file with
@@ -120,6 +131,7 @@ public/icon/          # extension icons
 8. **Verify**: `pnpm verify`, then commit with `feat: <what it does>` (drives the version bump + changelog).
 
 ## Rules
+
 - MV3 only; no remotely hosted code, no `eval`/`new Function` (Chrome Web Store policy). Code run in a page's
   main world (`browser.scripting.executeScript({ world: 'MAIN', func })`) must be a bundled function.
 - `browser.*` (WXT's global) instead of `chrome.*`.
@@ -131,6 +143,7 @@ public/icon/          # extension icons
   `PLAYWRIGHT_BROWSERS_PATH=D:\.cache\ms-playwright` for the agent only; other environments use the default.
 
 ## Releasing
+
 - Every push to `main` updates a **Release PR** (release-please). Merge it to release: it tags `vX.Y.Z`
   (first release: `v0.2.0`), writes `CHANGELOG.md` and creates the GitHub Release; then full CI runs on that tag,
   and only if green is the tested zip attached to the release and published to the Chrome Web Store.

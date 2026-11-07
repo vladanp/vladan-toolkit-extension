@@ -1,0 +1,26 @@
+/*
+ * Text that sites make unselectable with `user-select: none`. Text elements only, so app controls
+ * (buttons, sliders, drag handles) don't start selecting text when dragged.
+ */
+p,
+li,
+td,
+th,
+dd,
+dt,
+pre,
+code,
+blockquote,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+figcaption,
+article {
+  /* biome-ignore lint/complexity/noImportantStyles: must win over the site's user-select: none */
+  -webkit-user-select: text !important;
+  /* biome-ignore lint/complexity/noImportantStyles: must win over the site's user-select: none */
+  user-select: text !important;
+}

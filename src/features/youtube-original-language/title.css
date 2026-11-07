@@ -1,0 +1,7 @@
+/* The watch page title: YouTube's (translated) one is hidden while the original is shown next to it. */
+ytd-watch-metadata
+  h1:has(> [data-vladan-toolkit-original-title])
+  > :not([data-vladan-toolkit-original-title]) {
+  /* biome-ignore lint/complexity/noImportantStyles: must win over YouTube's own styles */
+  display: none !important;
+}

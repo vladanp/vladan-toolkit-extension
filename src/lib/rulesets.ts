@@ -1,5 +1,5 @@
 import { browser } from 'wxt/browser';
-import { type Feature, featureEnabled } from './features';
+import { type Feature, featureEnabled, pausedSites } from './features';
 
 /**
  * A declarativeNetRequest rule (the subset this extension uses). Chrome applies these itself, before
@@ -9,13 +9,15 @@ import { type Feature, featureEnabled } from './features';
 export interface Rule {
   id: number;
   priority?: number;
-  action: {
-    type: 'redirect';
-    redirect: {
-      transform?: { queryTransform?: { removeParams?: string[] } };
-      regexSubstitution?: string;
-    };
-  };
+  action:
+    | {
+        type: 'redirect';
+        redirect: {
+          transform?: { queryTransform?: { removeParams?: string[] } };
+          regexSubstitution?: string;
+        };
+      }
+    | { type: 'allow' };
   condition: {
     urlFilter?: string;
     regexFilter?: string;
@@ -50,5 +52,38 @@ export function syncRuleset(feature: Feature) {
       .catch((error) => console.error(`Couldn't switch the ${feature.id} rules`, error));
   };
   setting.watch(sync);
+  sync();
+}
+
+/** Id of the dynamic rule that exempts paused sites (dynamic rules have their own id space). */
+export const pausedSitesRuleId = 1;
+
+/** The rule letting requests to paused sites through untouched: an allow rule outranks the redirects. */
+export function pausedSitesRule(sites: string[]): Rule[] {
+  if (sites.length === 0) return [];
+  return [
+    {
+      id: pausedSitesRuleId,
+      priority: 100,
+      action: { type: 'allow' },
+      condition: { requestDomains: sites, resourceTypes: ['main_frame', 'sub_frame'] },
+    },
+  ];
+}
+
+/** Background: keeps the network rules away from the sites the user paused (now and on changes). */
+export function syncPausedSites() {
+  let queue = Promise.resolve();
+  const sync = () => {
+    queue = queue
+      .then(async () => {
+        await browser.declarativeNetRequest.updateDynamicRules({
+          removeRuleIds: [pausedSitesRuleId],
+          addRules: pausedSitesRule(await pausedSites.getValue()),
+        });
+      })
+      .catch((error) => console.error("Couldn't exempt the paused sites", error));
+  };
+  pausedSites.watch(sync);
   sync();
 }

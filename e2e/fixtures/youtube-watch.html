@@ -19,8 +19,22 @@
         const player = document.getElementById('movie_player');
         player.getAvailableQualityLevels = () => ['hd1440', 'hd1080', 'hd720', 'large', 'medium', 'auto'];
         player.setPlaybackQualityRange = (min, max) => window.qualityCalls.push(`${min}-${max}`);
+        // Audio tracks, tagged like YouTube's: the German dub it picks for a German browser, and the original.
+        window.audioCalls = [];
+        const dub = { name: 'German', getXtags: () => 'Cg8KBWFjb250EgZkdWJiZWQKCgoEbGFuZxICZGU' };
+        const original = { name: 'English (original)', getXtags: () => btoa('\n\u0005acont\u0012\u0008original') };
+        let audio = dub;
+        player.getVideoData = () => ({ video_id: new URLSearchParams(location.search).get('v') });
+        player.getAvailableAudioTracks = () => [dub, original];
+        player.getAudioTrack = () => audio;
+        player.setAudioTrack = (track) => {
+          audio = track;
+          window.audioCalls.push(track.name);
+        };
       </script>
       <ytd-watch-metadata>
+        <!-- The title as YouTube shows it to a German browser: machine translated. -->
+        <h1><yt-formatted-string>456.000$ Squid Game Im Echten Leben!</yt-formatted-string></h1>
         <segmented-like-dislike-button-view-model style="display: flex">
           <like-button-view-model>
             <button aria-label="like this video along with 19,479,454 other people"><span>👍</span> 19M</button>

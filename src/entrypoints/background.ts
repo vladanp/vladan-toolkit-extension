@@ -4,14 +4,15 @@ import { answerCookieBannerRequest } from '@/features/reject-cookie-banners/back
 import { isCookieBannerRequest } from '@/features/reject-cookie-banners/protocol';
 import { rulesets } from '@/features/rulesets';
 import { featureEnabled } from '@/lib/features';
-import { syncRuleset } from '@/lib/rulesets';
+import { syncPausedSites, syncRuleset } from '@/lib/rulesets';
 
 export default defineBackground(() => {
-  // Network level features: Chrome applies their rules while their switch is on.
+  // Network level features: Chrome applies their rules while their switch is on, except on paused sites.
   for (const { id } of rulesets) {
     const feature = features.find((f) => f.id === id);
     if (feature) syncRuleset(feature);
   }
+  syncPausedSites();
 
   const cookieBannersOn = featureEnabled(rejectCookieBanners);
   browser.runtime.onMessage.addListener((request, sender, sendResponse) => {

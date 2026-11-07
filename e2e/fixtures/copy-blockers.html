@@ -1,0 +1,39 @@
+<!doctype html>
+<!--
+  Offline model of a page that blocks copying, pasting, selecting and right-clicking, the usual ways
+  (handler attributes, page wide listeners, user-select: none), plus things that must keep working:
+  an app's own context menu on one element and an editor that pastes by itself.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Protected article</title>
+    <style>
+      body { user-select: none; -webkit-user-select: none; }
+    </style>
+  </head>
+  <body oncontextmenu="return false" onselectstart="return false">
+    <article><p id="text">Text the site doesn't want copied.</p></article>
+    <input id="confirm-email" aria-label="Confirm email" onpaste="return false" />
+    <input id="iban" aria-label="IBAN" />
+    <div id="app-menu">The app's own right-click menu</div>
+    <div id="editor" contenteditable="true">Editor</div>
+    <script>
+      document.addEventListener('copy', (event) => event.preventDefault());
+      document.getElementById('iban').addEventListener('paste', (event) => event.preventDefault());
+      document.getElementById('app-menu').addEventListener('contextmenu', (event) => event.preventDefault());
+      document.getElementById('editor').addEventListener('paste', (event) => {
+        event.preventDefault();
+        event.target.textContent += event.clipboardData.getData('text/plain');
+      });
+      // The final verdict of each event: registered last on window, the end of its way.
+      window.verdicts = [];
+      for (const type of ['copy', 'paste', 'contextmenu', 'selectstart']) {
+        addEventListener(type, (event) => {
+          const target = event.target.nodeType === 1 ? event.target : event.target.parentElement;
+          window.verdicts.push(`${type} ${target.id}: ${event.defaultPrevented ? 'blocked' : 'allowed'}`);
+        });
+      }
+    </script>
+  </body>
+</html>
