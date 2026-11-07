@@ -1,5 +1,5 @@
 import { injectStyle } from '@/lib/style';
-import { watchPageVideoId } from '@/lib/youtube';
+import { videoLookups, watchPageVideoId } from '@/lib/youtube';
 import { youtubeOriginalLanguage } from '.';
 import css from './title.css?inline';
 
@@ -22,29 +22,19 @@ const titleAttribute = 'data-vladan-toolkit-original-title';
 /** Shows the watched video's original title in place of YouTube's translation. Returns a function that stops. */
 export function startShowingOriginalTitles(doc: Document = document): () => void {
   const removeStyle = injectStyle(css, youtubeOriginalLanguage.id, doc);
-  const requested = new Set<string>();
   const titles = new Map<string, string>(); // Video id → original title, once it has arrived.
   let stopped = false;
 
-  const lookUp = (videoId: string) => {
-    if (requested.has(videoId)) return;
-    requested.add(videoId);
-    fetchOriginalTitle(videoId).then(
-      (title) => {
-        titles.set(videoId, title);
-        if (!stopped) render();
-      },
-      (error) => {
-        console.warn('Vladan Toolkit: original title lookup failed', error);
-        requested.delete(videoId); // Try again next time the video is opened.
-      },
-    );
-  };
+  // (Fails for videos that can't be embedded: their title then stays as YouTube shows it.)
+  const lookUp = videoLookups('original title', fetchOriginalTitle, (videoId, title) => {
+    titles.set(videoId, title);
+    if (!stopped) render();
+  });
 
   // YouTube rerenders the title and swaps videos without loading a new page: check on every change.
   const render = () => {
     const videoId = watchPageVideoId(doc.location.href);
-    if (videoId) lookUp(videoId);
+    lookUp(videoId);
     const title = videoId && titles.get(videoId);
     for (const heading of doc.querySelectorAll(titleSelector)) {
       let original = heading.querySelector(`:scope > [${titleAttribute}]`);
