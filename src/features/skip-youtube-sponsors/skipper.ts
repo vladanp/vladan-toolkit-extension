@@ -29,7 +29,8 @@ export function startSkipping(): () => void {
     let segments = cache.get(videoId);
     if (!segments) {
       segments = fetchSegments(videoId).catch((error) => {
-        console.warn('Vladan Toolkit: SponsorBlock lookup failed', error);
+        // The service is down or blocked: not the extension's error, so not on the errors page.
+        console.debug('Vladan Toolkit: SponsorBlock lookup failed', error);
         cache.delete(videoId); // Try again next time the video is opened.
         return [];
       });
